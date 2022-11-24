@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!--Required meta tags-->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!--jQuery-->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <!--Bootstrap CSS-->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+
+    <!--Custom Stylesheet-->
+    <link rel="stylesheet" href="/styles/style.css">
+
+    <!--Favicon-->
+    <link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+    <title>NFT Website</title>
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+    <header>
+        <!--Navigation bar-->
+        <div class="navbar navbar-dark bg-dark shadow-sm">
+            <div class="container">
+                <a href="/" class="navbar-brand d-flex align-items-center">
+                    <img src="/assets/favicon-32x32.png" alt="icon" width="35" height="35">
+                    <strong>NFT MarketPlace</strong>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="form-product">
+        <form id="product-form">
+            <div class="mb-3">
+                <label for="product_name" class="form-label">Product Name</label>
+                <input type="text" class="form-control" name="product_name" id="product_name" placeholder="" required>
+            </div>
+            <div class="mb-3">
+                <label for="product_id" class="form-label">Product Id</label>
+                <input type="text" class="form-control" name="product_id" id="product_id" placeholder="" required>
+            </div>
+            <div class="mb-3">
+                <label for="file" class="form-label">Product Image </label>
+                <!-- <input type="url" class="form-control" id="productImageURLInput" placeholder="" required> -->
+                <input type="file" class="form-control" name="file" id="file">
+            </div>
+            <div class="mb-3">
+                <label for="product_price" class="form-label">Product Price</label>
+                <input type="number" class="form-control" name="product_price" id="product_price" placeholder=""
+                    required>
+            </div>
+            <!-- <div class="mb-3">
+                <label for="productCategoryInput" class="form-label">Product Category</label>
+                <input type="text" class="form-control" id="productCategoryInput" placeholder="" required>
+            </div> -->
+            <div class="mb-3">
+                <label for="product_desc" class="form-label">Product Description</label>
+                <input type="text" class="form-control" name="product_desc" id="product_desc" placeholder="" required>
+            </div>
+            <div class="mb-3">
+                <label for="warranty_name" class="form-label">Warranty Name</label>
+                <input type="text" class="form-control" name="warranty_name" id="warranty_name" placeholder="" required>
+            </div>
+            <div class="mb-3">
+                <label for="warranty_secretkey" class="form-label">Warranty Secret key</label>
+                <input type="number" class="form-control" name="warranty_secretkey" id="warranty_secretkey"
+                    placeholder="" value="0">
+            </div>
+            <div class="mb-3">
+                <label for="expiry_duration" class="form-label">Expiry Duration (In seconds)</label>
+                <input type="number" class="form-control" name="expiry_duration" id="expiry_duration" placeholder=""
+                    required>
+            </div>
+            <div class="mb-3">
+                <label for="warranty_desc" class="form-label">Warranty Description</label>
+                <input type="text" class="form-control" name="warranty_desc" id="warranty_desc" placeholder="" required>
+            </div>
+            <button id="submit-warranty" class="btn btn-warning">Submit</button>
+        </form>
+    </main>
+    <div class="alert alert-info" role="alert" id="token-id-info" hidden>
+        Your Token-Id of the warranty is Token_Id, Please remember!
+    </div>
+    <footer class="mt-auto text-muted py-5">
+        <div class="container">
+        </div>
+    </footer>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.1.2/dist/axios.min.js"></script>
+
+    <script type="module">
+        var CONTRACT_ADDRESS = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512'; //Timer.sol
+        var CONTRACT_DEPLOYED = true;
+
+        var CONTRACT = undefined;
+        // 1. connect to my MetaMask account
+        //2. Deploy
+        //3. connect to contract
+        import connect from './Connect.js';
+        import deploy from './Deploy.js';
+        import getContract from './ConnContract.js';
+        import { ethers } from './ethers.main.js';
+
+        async function conn() {
+            const account = await connect();
+        }
+
+        async function getCont() {
+            CONTRACT = undefined;
+            CONTRACT = await getContract(CONTRACT_ADDRESS);
+
+            let content = '';
+            if (CONTRACT) {
+                content = 'Contract received!!!!';
+            } else {
+                content = 'Contract not available';
+            }
+            console.log(content);
+        }
+        const ip_addr = '54.83.105.94';
+        //Custom functions
+        const CreatingWarranty = async () => {
+            const formElement = document.querySelector("#product-form");
+            const formData = new FormData(formElement);
+            console.log(formElement);
+            console.log(formData);
+
+            const result = await axios({
+                method: "post",
+                url: `http://${ip_addr}/api/upload/`,
+                data: formData,
+                headers: { "Content-Type": "multipart/form-data" },
+            })
+            const product_price = Number(document.querySelector("#product_price").value);
+            const expiry_duration = Number(document.querySelector("#expiry_duration").value);
+            const warranty_secretkey = Number(document.querySelector("#warranty_secretkey").value);
+            if (result) {
+                console.log(result);
+                await conn();
+                await getCont();
+                const txnReceipt = await CONTRACT.mintToken(
+                    result.data.finalHash,
+                    product_price,
+                    expiry_duration,
+                    warranty_secretkey,
+                    {
+                        value: ethers.utils.parseUnits('0.05', 'ether')
+                    }
+                )
+
+                const events = await txnReceipt.wait();
+                var Token_Id = (events.events[2].args[2].toString())
+                var token = document.querySelector("#token-id-info");
+                token.innerHTML = `Your Token-Id of the warranty is ${Token_Id}, Please remember!`
+                token.removeAttribute("hidden");
+                //alert("Product has been added!");
+            } else {
+                alert("Failed to add product");
+            }
+        };
+        document.querySelector('#submit-warranty').addEventListener('click', async function (event) {
+            event.preventDefault()
+            await CreatingWarranty();
+        });
+    </script>
+    <!--Bootstrap Bundle with Popper-->
+    <!--<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW" crossorigin="anonymous"></script>-->
+</body>
+
+</html>
