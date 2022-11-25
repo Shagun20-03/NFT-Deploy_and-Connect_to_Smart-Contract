@@ -53,6 +53,27 @@
         </div>
     </main>
 
+    <main class=" form-product" style="margin-left: 6.5rem;">
+        <form class="float-left" id="token-form">
+            <div class="mb-3" style="display: inline-block;padding-right: 10px;">
+                <label for="Expiry_token_id" class="form-label">Token-Id</label>
+                <input type="number" class="form-control" name="Expiry_token_number" id="Expiry_token_id" placeholder="">
+            </div>
+            <button id="token_check" class="btn btn-warning"> Check Token Details</button>
+        </form>
+    </main>
+    
+
+    <main class="form-product" style="margin-left: 6.5rem;">
+        <form id="checkOwnerhip">
+            <div class="mb-3" style="display: inline-block;padding-right: 10px;">
+                <label for="ownership-token-id" class="form-label">Token-Id</label>
+                <input type="number" class="form-control" name="ownership-token-id" id="ownership-token-id" required>
+            </div>
+            <button id="checkOwnershipButton" class="btn btn-warning">Check Ownership</button>
+        </form>
+    </main>
+
     <footer class="mt-auto text-muted py-5">
         <div class="container">
             <p class="float-end mb-1">
@@ -65,6 +86,87 @@
     <!--<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW" crossorigin="anonymous"></script>-->
 
     <script src="/scripts/index.mjs" type="module"></script>
+    <script type="module">
+        var CONTRACT_ADDRESS = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512'; //Timer.sol
+        var CONTRACT_DEPLOYED = true;
+
+        var CONTRACT = undefined;
+        // 1. connect to my MetaMask account
+        //2. Deploy
+        //3. connect to contract
+        import connect from './Connect.js';
+        import deploy from './Deploy.js';
+        import getContract from './ConnContract.js';
+        import { ethers } from './ethers.main.js';
+
+        async function conn() {
+            const account = await connect();
+        }
+
+        async function getCont() {
+            CONTRACT = undefined;
+            CONTRACT = await getContract(CONTRACT_ADDRESS);
+
+            let content = '';
+            if (CONTRACT) {
+                content = 'Contract received!!!!';
+            } else {
+                content = 'Contract not available';
+            }
+            console.log(content);
+        }
+        const ip_addr = '54.83.105.94';
+
+        const checkExpiry = async () => {
+            try{
+                await conn();
+                await getCont();
+                
+                const token = Number(document.querySelector("#Expiry_token_id").value)
+
+                const response  = await CONTRACT.checkExpiryRemaining(token);
+                
+                console.log(response);    
+                
+            }catch(err){
+                if(err.message.search("Warranty expired!!!")){
+                    console.log(err);
+                    console.log("token expired");
+                }
+            }
+            
+        }
+
+        const checkOwnerhip = async() => {
+            try{
+                await conn();
+                await getCont();
+
+                const token = Number(document.querySelector("#ownership-token-id").value)
+
+                const response = await CONTRACT.ownerShipProof( token );
+
+                console.log(response);
+            }
+            catch(err) {
+                // console.log(err);
+                if(err.message.search("Warranty expired!!!")){
+                    console.log("token expired");
+                }
+            }
+            
+        }
+
+        document.querySelector("#token_check").addEventListener("click", async (event) => {
+            event.preventDefault();
+            await checkExpiry()
+        });
+
+        document.querySelector("#checkOwnershipButton").addEventListener("click", async (event) => {
+            event.preventDefault();
+            await checkOwnerhip()
+        });        
+    </script>
 </body>
 
 </html>
