@@ -55,6 +55,10 @@ $("#product-form").submit(async function (form) {
     }
 });
 
+$("#get-product").on("click", function () {
+    window.location.href = "get-product.html";
+});
+
 // Fill update-form with values from original product
 // $("#update-form").ready(async function() {
 //     const id = window.location.href.split("?id=").pop();
