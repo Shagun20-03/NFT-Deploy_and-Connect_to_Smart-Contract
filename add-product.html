@@ -95,7 +95,7 @@
     <script src="https://cdn.jsdelivr.net/npm/axios@1.1.2/dist/axios.min.js"></script>
 
     <script type="module">
-        var CONTRACT_ADDRESS = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512'; //Timer.sol
+        var CONTRACT_ADDRESS = '0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1'; //Timer.sol
         var CONTRACT_DEPLOYED = true;
 
         var CONTRACT = undefined;
@@ -137,13 +137,13 @@
                 data: formData,
                 headers: { "Content-Type": "multipart/form-data" },
             })
-            const product_price = Number(document.querySelector("#product_price").value);
+            const product_price = ethers.utils.parseUnits(document.querySelector("#product_price").value, 'ether')//Number(document.querySelector("#product_price").value);
             const expiry_duration = Number(document.querySelector("#expiry_duration").value);
             const warranty_secretkey = Number(document.querySelector("#warranty_secretkey").value);
             if (result) {
                 console.log(result);
-                await conn();
-                await getCont();
+               await conn();
+                await  getCont();
                 const txnReceipt = await CONTRACT.mintToken(
                     result.data.finalHash,
                     product_price,
