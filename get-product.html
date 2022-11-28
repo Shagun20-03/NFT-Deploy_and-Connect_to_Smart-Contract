@@ -216,7 +216,7 @@
                                 return;
                             }
                         secretKey = Number(document.querySelector("#buyer_secretkey").value);
-                        if (secretKey <= 0)
+                        if (secretKey < 0)
                         {
                             alert("Secret is cannot be negative!!!")
                             return
