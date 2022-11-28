@@ -65,7 +65,8 @@
         <form class="float-left" id="token-form">
             <div class="mb-3" style="display: inline-block;padding-right: 10px;">
                 <label for="Expiry_token_id" class="form-label">Token-Id</label>
-                <input type="number" class="form-control" name="Expiry_token_number" id="Expiry_token_id" placeholder="">
+                <input type="number" class="form-control" name="Expiry_token_number" id="Expiry_token_id"
+                    placeholder="">
             </div>
             <button id="token_check" class="btn btn-warning">Check Token Expiry</button>
         </form>
@@ -74,7 +75,7 @@
         <div class="alert alert-danger" role="alert" id="expiry-alert-failure" hidden>
         </div>
     </main>
-    
+
 
     <main class="form-product" style="margin-left: 6.5rem;">
         <form id="checkOwnerhip" style="display: inline-block;padding-right: 10px;">
@@ -115,7 +116,7 @@
         import deploy from './Deploy.js';
         import getContract from './ConnContract.js';
         import { ethers } from './ethers.main.js';
-                                                                                                                            import { CONTRACT_ADDRESS, ip_addr } from "./config.js"
+        import { CONTRACT_ADDRESS, ip_addr } from "./config.js"
 
         async function conn() {
             const account = await connect();
@@ -136,30 +137,25 @@
 
         const checkExpiry = async () => {
             const token = Number(document.querySelector("#Expiry_token_id").value)
-            try{
+            try {
                 await conn();
                 await getCont();
-                
 
+                const response = await CONTRACT.checkExpiryRemaining(token);
+                console.log(response);
 
-                const response  = await CONTRACT.checkExpiryRemaining(token);
-                
-                console.log(response);  
-                
                 document.getElementById("expiry-alert-success").innerHTML = `Time Remaining: ${response}`;
                 document.getElementById("expiry-alert-success").hidden = false;
-                
-            }catch(err){
+
+            } catch (err) {
                 const alert = document.getElementById("expiry-alert-failure");
 
                 console.log(err)
-                if (err.data.message.includes("Warranty expired!!!"))
-                {
+                if (err.data.message.includes("Warranty expired!!!")) {
                     alert.innerHTML = "Token Expired";
                     console.log(err);
                     console.log("token expired");
-                    if (token)
-                    {
+                    if (token) {
                         console.log("Token deletion started")
                         result = await axios({
                             method: "get",
@@ -168,36 +164,30 @@
                         console.log("Token deletion ended")
                         console.log(result)
                     }
-                } else if (err.data.message.includes("invalid token ID"))
-                {
+                } else if (err.data.message.includes("invalid token ID")) {
                     alert.innerHTML = "Invalid Token";
-                } else if (err.data.message.includes("Only creator or owner"))
-                {
+                } else if (err.data.message.includes("Only creator or owner")) {
                     alert.innerHTML = "Only creator or owner of the token can check Expiry time remaining"
-                } else if (err.data.message.includes("Product unsold"))
-                {
+                } else if (err.data.message.includes("Product unsold")) {
                     alert.innerHTML = "Product unsold"
                 }
-                else
-                {
+                else {
                     alert.innerHTML = "Contract Failure!!"
                 }
 
 
                 alert.hidden = false;
             }
-            
+
         }
 
-        const checkOwnerhip = async() => {
+        const checkOwnerhip = async () => {
             const token = Number(document.querySelector("#ownership-token-id").value);
-            try{
+            try {
                 await conn();
                 await getCont();
 
-
-
-                const response = await CONTRACT.ownerShipProof( token );
+                const response = await CONTRACT.ownerShipProof(token);
                 const details = await CONTRACT.getTokenDetails(token);
                 console.log("seller:", details[0])
                 console.log("owner:", details[1])
@@ -208,11 +198,9 @@
                 console.log("Secret Key:", details[6].toString())
                 console.log("Timestamp:", details[7].toString())
                 // console.log(typeof response);
-                if (response)
-                {
+                if (response) {
                     document.getElementById("ownership-alert-success").hidden = false;
-                } else
-                {
+                } else {
                     document.getElementById("ownership-alert-failure").hidden = false;
                 }
                 // const response = await CONTRACT.getTokenDetails(token);
@@ -225,16 +213,14 @@
                 // console.log("WarrantySecret:",response[6].toString());
                 // console.log("Timestamp:", response[7].toString())
             }
-            catch(err) {
+            catch (err) {
                 const alert = document.getElementById("ownership-alert-failure");
                 // console.log(err);
                 // console.log(err.data.message.includes("invalid token ID"))
-                if (err.data.message.includes("Warranty expired!!!"))
-                {
+                if (err.data.message.includes("Warranty expired!!!")) {
                     alert.innerHTML = "Token Expired";
                     console.log("token expired", token, "did see the token?");
-                    if (token)
-                    {
+                    if (token) {
                         console.log("Token deletion")
                         result = await axios({
                             method: "get",
@@ -244,28 +230,21 @@
                         console.log(result)
                     }
 
-                } else if (err.data.message.includes("Product unsold"))
-                {
+                } else if (err.data.message.includes("Product unsold")) {
                     alert.innerHTML = "Product is still unsold";
                     console.log("Product Unsold")
-                } else if (err.data.message.includes("invalid token ID"))
-                {
+                } else if (err.data.message.includes("invalid token ID")) {
                     alert.innerHTML = "Invalid Token";
                     console.log(err)
-                } else if (err.data.message.includes("Only creator or owner"))
-                {
+                } else if (err.data.message.includes("Only creator or owner")) {
                     alert.innerHTML = "Only creator or owner of the token can check Expiry time remaining"
                 }
-                else
-                {
+                else {
                     alert.innerHTML = "Contract Failure!!"
                 }
-
-
-
                 alert.hidden = false;
             }
-            
+
         }
 
         document.querySelector("#token_check").addEventListener("click", async (event) => {

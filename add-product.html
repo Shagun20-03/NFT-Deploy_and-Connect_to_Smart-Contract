@@ -86,10 +86,10 @@
         <div class="alert alert-primary alert-fixed d-inline-flex justify-content-center fade" id="loadingSymbol">
             Loading ...
         </div>
-        <div class="alert alert-info alert-fixed fade d-inline-flex justify-content-center" role="alert" id="token-id-info"
-            style="margin-top: 5px"></div>
-        <div class="alert alert-danger alert-fixed fade d-inline-flex justify-content-center" role="alert" id="token-id-failed"
-            style="margin-top: 5px"></div>
+        <div class="alert alert-info alert-fixed fade d-inline-flex justify-content-center" role="alert"
+            id="token-id-info" style="margin-top: 5px"></div>
+        <div class="alert alert-danger alert-fixed fade d-inline-flex justify-content-center" role="alert"
+            id="token-id-failed" style="margin-top: 5px"></div>
     </main>
     <footer class="mt-auto text-muted py-5">
         <div class="container">
@@ -109,104 +109,92 @@
         import deploy from './Deploy.js';
         import getContract from './ConnContract.js';
         import { ethers } from './ethers.main.js';
-                            import { CONTRACT_ADDRESS, ip_addr } from "./config.js"
+        import { CONTRACT_ADDRESS, ip_addr } from "./config.js"
 
-                            async function conn()
-                            {
+        async function conn() {
             const account = await connect();
         }
 
-                            async function getCont()
-                            {
+        async function getCont() {
             CONTRACT = undefined;
             CONTRACT = await getContract(CONTRACT_ADDRESS);
 
             let content = '';
-                            if (CONTRACT)
-                            {
+            if (CONTRACT) {
                 content = 'Contract received!!!!';
-                        } else
-                        {
+            } else {
                 content = 'Contract not available';
             }
             console.log(content);
-                        }
+        }
         //Custom functions
-                            const CreatingWarranty = async () =>
-                            {
+        const CreatingWarranty = async () => {
             const formElement = document.querySelector("#product-form");
             const formData = new FormData(formElement);
             console.log(formElement);
             console.log(formData);
-                            let result = null;
-                            try
-                            {
-                                result = await axios({
-                                    method: "post",
-                                    url: `http://${ip_addr}/api/upload/`,
-                                    data: formData,
-                                    headers: { "Content-Type": "multipart/form-data" },
-                                })
-                            } catch (err)
-                            {
-                                console.log(err)
-                                var token = document.querySelector("#token-id-failed");
-                                token.innerHTML = `Token upload Failed! Sever Failure.`
-                                token.classList.add("in");
-                            }
-                            try
-                            {
-                                const product_price = ethers.utils.parseUnits(document.querySelector("#product_price").value,
-                                    'ether')//Number(document.querySelector("#product_price").value);
-                                const expiry_duration = Number(document.querySelector("#expiry_duration").value);
-                                const warranty_secretkey = Number(document.querySelector("#warranty_secretkey").value);
-                            if (result)
-                            {
-                                console.log(result);
-                                await conn();
-                            await getCont();
-                            const loader = document.getElementById("loadingSymbol")
-                            loader.classList.add("in")
-                            // loader.hidden = false;
-                            const txnReceipt = await CONTRACT.mintToken(
-                                result.data.finalHash,
-                                product_price,
-                                expiry_duration,
-                                warranty_secretkey,
-                                {
-                                    value: ethers.utils.parseUnits('0.05', 'ether')
-                                }
-                            )
-
-                            const events = await txnReceipt.wait();
-                    // console.log(events)
-                            var Token_Id = (events.events[2].args[2].toString())
-                            // loader.hidden = true;
-                            loader.classList.remove("in")
-                        
-                            var token = document.querySelector("#token-id-info");
-                            token.innerHTML = `Your Token-Id of the warranty is ${Token_Id}, Please remember!`
-                            token.classList.add("in");
-                    //alert("Product has been added!");
-                            } else
-                            {
-                                var token = document.querySelector("#token-id-failed");
-                                token.innerHTML = `No Ipfs Hash found!!! Invalid Server Response.`
-                                token.classList.add("in");
-                            }
-                        } catch (err)
+            let result = null;
+            try {
+                result = await axios({
+                    method: "post",
+                    url: `http://${ip_addr}/api/upload/`,
+                    data: formData,
+                    headers: { "Content-Type": "multipart/form-data" },
+                })
+            } catch (err) {
+                console.log(err)
+                var token = document.querySelector("#token-id-failed");
+                token.innerHTML = `Token upload Failed! Sever Failure.`
+                token.classList.add("in");
+            }
+            try {
+                const product_price = ethers.utils.parseUnits(document.querySelector("#product_price").value,
+                    'ether')//Number(document.querySelector("#product_price").value);
+                const expiry_duration = Number(document.querySelector("#expiry_duration").value);
+                const warranty_secretkey = Number(document.querySelector("#warranty_secretkey").value);
+                if (result) {
+                    console.log(result);
+                    await conn();
+                    await getCont();
+                    const loader = document.getElementById("loadingSymbol")
+                    loader.classList.add("in")
+                    // loader.hidden = false;
+                    const txnReceipt = await CONTRACT.mintToken(
+                        result.data.finalHash,
+                        product_price,
+                        expiry_duration,
+                        warranty_secretkey,
                         {
-                            console.log(err);
-                            var token = document.querySelector("#token-id-failed");
-                            token.innerHTML = `Token minting upload Failed! Contract Failure.`
-                            token.removeAttribute("hidden");
+                            value: ethers.utils.parseUnits('0.05', 'ether')
+                        }
+                    )
+
+                    const events = await txnReceipt.wait();
+                    // console.log(events)
+                    var Token_Id = (events.events[2].args[2].toString())
+                    // loader.hidden = true;
+                    loader.classList.remove("in")
+
+                    var token = document.querySelector("#token-id-info");
+                    token.innerHTML = `Your Token-Id of the warranty is ${Token_Id}, Please remember!`
+                    token.classList.add("in");
+                    //alert("Product has been added!");
+                } else {
+                    var token = document.querySelector("#token-id-failed");
+                    token.innerHTML = `No Ipfs Hash found!!! Invalid Server Response.`
+                    token.classList.add("in");
+                }
+            } catch (err) {
+                console.log(err);
+                var token = document.querySelector("#token-id-failed");
+                token.innerHTML = `Token minting upload Failed! Contract Failure.`
+                token.removeAttribute("hidden");
             }
         };
-                            document.querySelector('#submit-warranty').addEventListener('click', async function (event)
-                            {
+        document.querySelector('#submit-warranty').addEventListener('click', async function (event) {
             event.preventDefault()
-                            document.querySelector("#token-id-failed").classList.remove("in");
-                            document.querySelector("#token-id-info").classList.remove("in");
+            document.querySelector("#token-id-failed").classList.remove("in");
+            document.querySelector("#token-id-info").classList.remove("in");
             await CreatingWarranty();
         });
     </script>
