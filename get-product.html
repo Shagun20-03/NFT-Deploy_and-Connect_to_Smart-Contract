@@ -29,7 +29,7 @@
             <div class="container">
                 <a href="/" class="navbar-brand d-flex align-items-center">
                     <img src="/assets/favicon-32x32.png" alt="icon" width="35" height="35">
-                    <strong>NFT MarketPlace</strong>
+                    <strong>NFT Website</strong>
                 </a>
             </div>
         </div>
@@ -44,7 +44,7 @@
         </form>
     </main>
 
-    <div id="show_product">
+    <div id="show_product" hidden>
         <table class="table">
             <tbody>
                 <tr>
@@ -79,16 +79,26 @@
                     <th scope="row">Warranty Description: </th>
                     <td id="warranty_desc_show"></td>
                 </tr>
+                <tr>
+                    <th scope="row">Status: </th>
+                    <td id="warranty_status"></td>
+                </tr>
 
             </tbody>
         </table>
-        <button id="buy_product" type="submit" class="btn btn-warning">Buy Now!!!</button>
+        <button id="buy_product" class="btn btn-warning" disabled>Buy Now!!!</button>
+        <form class="float-left" id="token-form">
+            <div class="mb-3" style="display: inline-block;padding-right: 10px;">
+                <label for="buyer_address" class="form-label">Address</label>
+                <input type="text" class="form-control" name="buyer_address" id="buyer_address" placeholder="">
+            </div>
+            <button id="transferOwnership" class="btn btn-warning">Transfer owenership</button>
+        </form>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios@1.1.2/dist/axios.min.js"></script>
     <script type="module">
-        var CONTRACT_ADDRESS = '0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1'; //Timer.sol
         var CONTRACT_DEPLOYED = true;
 
         var CONTRACT = undefined;
@@ -99,102 +109,253 @@
         import deploy from './Deploy.js';
         import getContract from './ConnContract.js';
         import { ethers } from './ethers.main.js';
+                                    import { CONTRACT_ADDRESS, ip_addr } from "./config.js";
 
-        async function conn() {
+                                    async function conn()
+                                    {
             const account = await connect();
         }
 
-        async function getCont() {
+                                    async function getCont()
+                                    {
             CONTRACT = undefined;
             CONTRACT = await getContract(CONTRACT_ADDRESS);
 
             let content = '';
-            if (CONTRACT) {
+                                    if (CONTRACT)
+                                    {
                 content = 'Contract received!!!!';
-            } else {
+                                } else
+                                {
                 content = 'Contract not available';
             }
             console.log(content);
-        }
-        const ip_addr = '54.83.105.94';
+                                }
         let TOKEN = 0;
         let secretKey = 0;
         let product_price = 0;
         //Custom functions
-        const getProduct = async () => {
+                                    const getProduct = async () =>
+                                    {
             var token1 = (document.querySelector("#token-id").value)
-            if (token1) {
-                console.log(token1)
-            }
-            else {
-                console.log(token1)
-                return;
-            }
-            await conn();
-            await getCont();
-            const ipfs_uri = await CONTRACT.tokenURI(
-                Number(token1)
-            )
-            TOKEN = Number(token1);
-            console.log(ipfs_uri)
-            const response = await axios({
-                method: "get",
-                url: `http://${ip_addr}/ipfs/${ipfs_uri}`,
-            })
+                                    TOKEN = Number(token1);
+                                    try
+                                    {
 
-            if (response.status == 200) {
-                console.log('Success:', response.data);
-                let tds = document.querySelectorAll('td')
-                tds[0].innerHTML = response.data.Product.product_id;
-                tds[1].innerHTML = response.data.Product.product_name;
-                tds[2].innerHTML = `<img src="http://${ip_addr}/ipfs/${response.data.Product.product_image_hash}"></img>`
-                tds[3].innerHTML = response.data.Product.product_price;
-                tds[4].innerHTML = response.data.Product.product_desc;
-                tds[5].innerHTML = response.data.warranty.warranty_secretkey;
-                tds[6].innerHTML = response.data.warranty.expiry_duration;
-                tds[7].innerHTML = response.data.warranty.warranty_desc;
-                secretKey = Number(response.data.warranty.warranty_secretkey);
-                product_price = Number(response.data.Product.product_price);
-            }
-        }
+                                        if (token1)
+                                        {
+                                            console.log(token1)
+                                        }
+                                    else
+                                    {
+                                        console.log(token1)
+                                        return;
+                                    }
+                                    await conn();
+                                    await getCont();
+                                    const ipfs_uri = await CONTRACT.getTokenURI(
+                                        Number(token1)
+                                    )
+                                    TOKEN = Number(token1);
+                                    console.log(ipfs_uri)
+                                    const response = await axios({
+                                        method: "get",
+                                    url: `http://${ip_addr}/ipfs/${ipfs_uri[0]}`,
+                                })
 
-        const buyProduct = async () => {
-            await conn();
-            await getCont();
-            if (TOKEN == 0) {
-                alert("Please get product!!!");
-                return;
-            }
-            // console.log(TOKEN, secretKey, product_price)
-            const txnReceipt = await CONTRACT.buyProduct(
-                TOKEN,
-                secretKey,
-                {
-                    value: ethers.utils.parseUnits(product_price.toString(), 'ether')
-                }
-            )
+                                    if (response.status == 200)
+                                    {
+                                        console.log('Success:', response.data);
+                                        let tds = document.querySelectorAll('td')
+                                        tds[0].innerHTML = response.data.Product.product_id;
+                                        tds[1].innerHTML = response.data.Product.product_name;
+                                        tds[2].innerHTML = `<img src="http://${ip_addr}/ipfs/${response.data.Product.product_image_hash}"></img>`
+                                        tds[3].innerHTML = response.data.Product.product_price;
+                                        tds[4].innerHTML = response.data.Product.product_desc;
+                                        tds[5].innerHTML = response.data.warranty.warranty_secretkey;
+                                        tds[6].innerHTML = response.data.warranty.expiry_duration;
+                                        tds[7].innerHTML = response.data.warranty.warranty_desc;
+                                    tds[8].innerHTML = (ipfs_uri[1]) ? "Sold" : "Available";
+                                    secretKey = Number(response.data.warranty.warranty_secretkey);
+                                    product_price = Number(response.data.Product.product_price);
+                                    document.getElementById("show_product").hidden = false;
+                                    if (!ipfs_uri[1])
+                                    {
+                                        document.getElementById("buy_product").disabled = false;
+                                    } else
+                                    {
+                                        document.getElementById("transferOwnership").disabled = false;
+                                    }
+                                }
+                                }
+                                catch (err)
+                                {
 
-            const receipt = await txnReceipt.wait()
+                                                                                                    if (err.data.message.includes("Warranty expired!!!"))
+                                                                                                    {
+                                                                                                        console.log("Token to delete:", TOKEN)
+                                                                                                        if (TOKEN)
+                                                                                                        {
+                                                                                                            console.log("Token deletion started")
+                                                                                                            const result = await axios({
+                                                                                                                method: "get",
+                                                                                                                url: `http://${ip_addr}/api/token_burn?token_id=${TOKEN}`,
+                                                                                                            })
+                                                                                                            console.log("Token deletion ended")
+                                                                                                            console.log(result)
+                                                                                                        }
+                                                                                                        alert("Token Expired!!!")
+                                                                                                        window.location.href = "/index.html";
 
-            alert("You are now the owner of this product!!!")
-        }
+                                                                                                    } else if (err.data.message.includes("invalid token ID"))
+                                                                                                    {
+                                                                                                        alert("Invalid Token");
+                                                                                                    } else
+                                                                                                    {
+                                                                                                        alert("Contract Failure!!")
+                                                                                                    }
+
+                                                                                                }
+
+                                                                                            }
+
+                                                                                            const buyProduct = async () =>
+                                                                                            {
+                                                                                                try
+                                                                                                {
+                                                                                                    await conn();
+                                                                                                    await getCont();
+                                                                                        if (TOKEN == 0)
+                                                                                        {
+                                                                                            alert("Please get product!!!");
+                                                                                            return;
+                                                                                        }
+                                                                                        // console.log(TOKEN, secretKey, product_price)
+                                                                                        const txnReceipt = await CONTRACT.buyProduct(
+                                                                                            TOKEN,
+                                                                                            secretKey,
+                                                                                            {
+                                                                                                value: ethers.utils.parseUnits(product_price.toString(), 'ether')
+                                                                                            }
+                                                                                        )
+
+                                                                                        const receipt = await txnReceipt.wait()
+
+                                                                                        document.getElementById("buy_product").disabled = true;
+
+                                                                                        document.getElementById("warranty_status").innerHTML = "Sold"
+
+                                                                                        alert("You are now the owner of this product!!!")
+                                                                    } catch (err)
+                                                                    {
+                                                                        if (err.data.message.includes("Warranty expired!!!"))
+                                                                        {
+                                                                            if (TOKEN)
+                                                                            {
+                                                                                console.log("Token deletion started")
+                                                                                result = await axios({
+                                                                                    method: "get",
+                                                                                    url: `http://${ip_addr}/api/token_burn?token_id=${TOKEN}`,
+                                                                                })
+                                                                                console.log("Token deletion ended")
+                                                                                console.log(result)
+                                                                            }
+                                                                            alert("Token Expired!!!")
+                                                                        } else if (err.data.message.includes("invalid token ID"))
+                                                                        {
+                                                                            alert("Invalid Token");
+                                                                        } else if (err.data.message.includes("Product already sold!!!!"))
+                                                                        {
+                                                                            alert("Product already sold!!!")
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            alert("Contract Failure!!")
+                                                                        }
+                                                                    }
+
+                                                                }
+
+                                                                const transferOwnership = async () =>
+                                                                {
+                                                                    try
+                                                                    {
+                                                                        await conn();
+                                                                        await getCont();
+                                                                        if (TOKEN == 0)
+                                                                        {
+                                                                            alert("Please get product!!!");
+                                                                            return;
+                                                                        }
+                                                                        // console.log(TOKEN, secretKey, product_price)
+                                                                        const address = document.querySelector("#buyer_address").value;
+                                                                        if (address && address.length == 0)
+                                                                        {
+                                                                            alert("Please enter proper address");
+                                                                            return;
+                                                                        }
+                                                                        const txnReceipt = await CONTRACT.transferOwnershipOfProduct(
+                                                                            address,
+                                                                            TOKEN,
+                                                                            {
+                                                                                value: ethers.utils.parseUnits(product_price.toString(), 'ether')
+                                                                    }
+                                                                )
+
+                                                                const receipt = await txnReceipt.wait()
+
+                                                                alert("Ownership of this token changed!!!")
+                                                            } catch (err)
+                                                            {
+                                                                console.log(err);
+                                                                if (err.data.message.includes("Warranty expired!!!"))
+                                                                {
+                                                                    if (TOKEN)
+                                                                    {
+                                                                        console.log("Token deletion started")
+                                                                        const result = await axios({
+                                                                            method: "get",
+                                                                            url: `http://${ip_addr}/api/token_burn?token_id=${TOKEN}`,
+                                                                        })
+                                                                        console.log("Token deletion ended")
+                                                                        console.log(result)
+                                                                    }
+                                                                    alert("Token Expired!!!")
+                                                                } else if (err.data.message.includes("invalid token ID"))
+                                                                {
+                                                                    alert("Invalid Token");
+                                                                } else if (err.data.message.includes("Product already sold!!!!"))
+                                                                {
+                                                                    alert("Product already sold!!!")
+                                                                }
+                                                                else
+                                                                {
+                                                                    alert("Contract Failure!!")
+                                                                }
+                                                            }
+                                                        }
 
 
-        // if (!response.ok)
-        //     throw new Error(response.statusText);
 
-        // const json = await response.json();
-        // console.log(json.image)
-
-
-        document.querySelector('#submit-token').addEventListener('click', async function (event) {
+                                    document.querySelector('#submit-token').addEventListener('click', async function (event)
+                                    {
             event.preventDefault()
+                                    document.getElementById("buy_product").disabled = true;
+                                    document.getElementById("show_product").hidden = true;
             await getProduct();
         });
 
-        document.querySelector("#show_product").addEventListener('click', async function (event) {
-            event.preventDefault();
-            await buyProduct();
+                                    document.querySelector("#buy_product").addEventListener('click', async function (event)
+                                    {
+                                        event.preventDefault();
+                                    document.getElementById("buy_product").disabled = true;
+                                    await buyProduct();
+                                });
+
+                                document.querySelector("#transferOwnership").addEventListener('click', async function (event)
+                                {
+                                    event.preventDefault();
+                                    await transferOwnership();
         });
 
     </script>

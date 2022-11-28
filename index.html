@@ -29,7 +29,7 @@
             <div class="container">
                 <a href="/" class="navbar-brand d-flex align-items-center">
                     <img src="/assets/favicon-32x32.png" alt="icon" width="35" height="35">
-                    <strong> NFT MarketPlace </strong>
+                    <strong> NFT Website </strong>
                 </a>
 
             </div>
@@ -67,19 +67,29 @@
                 <label for="Expiry_token_id" class="form-label">Token-Id</label>
                 <input type="number" class="form-control" name="Expiry_token_number" id="Expiry_token_id" placeholder="">
             </div>
-            <button id="token_check" class="btn btn-warning"> Check Token Details</button>
+            <button id="token_check" class="btn btn-warning">Check Token Expiry</button>
         </form>
+        <div class="alert alert-success" role="alert" id="expiry-alert-success" hidden>
+        </div>
+        <div class="alert alert-danger" role="alert" id="expiry-alert-failure" hidden>
+        </div>
     </main>
     
 
     <main class="form-product" style="margin-left: 6.5rem;">
-        <form id="checkOwnerhip">
+        <form id="checkOwnerhip" style="display: inline-block;padding-right: 10px;">
             <div class="mb-3" style="display: inline-block;padding-right: 10px;">
                 <label for="ownership-token-id" class="form-label">Token-Id</label>
                 <input type="number" class="form-control" name="ownership-token-id" id="ownership-token-id" required>
             </div>
             <button id="checkOwnershipButton" class="btn btn-warning">Check Ownership</button>
         </form>
+        <div class="alert alert-success" role="alert" id="ownership-alert-success" hidden>
+            You are the owner of this token.
+        </div>
+        <div class="alert alert-danger" role="alert" id="ownership-alert-failure" hidden>
+            You are not the owner of this token.
+        </div>
     </main>
 
     <footer class="mt-auto text-muted py-5">
@@ -92,10 +102,9 @@
 
     <!--Bootstrap Bundle with Popper-->
     <!--<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW" crossorigin="anonymous"></script>-->
-
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.1.2/dist/axios.min.js"></script>
     <script src="/scripts/index.mjs" type="module"></script>
     <script type="module">
-        var CONTRACT_ADDRESS = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512'; //Timer.sol
         var CONTRACT_DEPLOYED = true;
 
         var CONTRACT = undefined;
@@ -106,6 +115,7 @@
         import deploy from './Deploy.js';
         import getContract from './ConnContract.js';
         import { ethers } from './ethers.main.js';
+                                                                                                                            import { CONTRACT_ADDRESS, ip_addr } from "./config.js"
 
         async function conn() {
             const account = await connect();
@@ -123,55 +133,152 @@
             }
             console.log(content);
         }
-        const ip_addr = '54.83.105.94';
 
         const checkExpiry = async () => {
+            const token = Number(document.querySelector("#Expiry_token_id").value)
             try{
                 await conn();
                 await getCont();
                 
-                const token = Number(document.querySelector("#Expiry_token_id").value)
+
 
                 const response  = await CONTRACT.checkExpiryRemaining(token);
                 
-                console.log(response);    
+                console.log(response);  
+                
+                document.getElementById("expiry-alert-success").innerHTML = `Time Remaining: ${response}`;
+                document.getElementById("expiry-alert-success").hidden = false;
                 
             }catch(err){
-                if(err.message.search("Warranty expired!!!")){
+                const alert = document.getElementById("expiry-alert-failure");
+
+                console.log(err)
+                if (err.data.message.includes("Warranty expired!!!"))
+                {
+                    alert.innerHTML = "Token Expired";
                     console.log(err);
                     console.log("token expired");
+                    if (token)
+                    {
+                        console.log("Token deletion started")
+                        result = await axios({
+                            method: "get",
+                            url: `http://${ip_addr}/api/token_burn?token_id=${token}`,
+                        })
+                        console.log("Token deletion ended")
+                        console.log(result)
+                    }
+                } else if (err.data.message.includes("invalid token ID"))
+                {
+                    alert.innerHTML = "Invalid Token";
+                } else if (err.data.message.includes("Only creator or owner"))
+                {
+                    alert.innerHTML = "Only creator or owner of the token can check Expiry time remaining"
+                } else if (err.data.message.includes("Product unsold"))
+                {
+                    alert.innerHTML = "Product unsold"
                 }
+                else
+                {
+                    alert.innerHTML = "Contract Failure!!"
+                }
+
+
+                alert.hidden = false;
             }
             
         }
 
         const checkOwnerhip = async() => {
+            const token = Number(document.querySelector("#ownership-token-id").value);
             try{
                 await conn();
                 await getCont();
 
-                const token = Number(document.querySelector("#ownership-token-id").value)
+
 
                 const response = await CONTRACT.ownerShipProof( token );
-
-                console.log(response);
+                const details = await CONTRACT.getTokenDetails(token);
+                console.log("seller:", details[0])
+                console.log("owner:", details[1])
+                console.log("price:", ethers.utils.formatEther(details[2].toString()))
+                console.log("isSold:", details[3])
+                console.log("Expiry D:", details[4].toString())
+                console.log("Expiry T:", details[5].toString())
+                console.log("Secret Key:", details[6].toString())
+                console.log("Timestamp:", details[7].toString())
+                // console.log(typeof response);
+                if (response)
+                {
+                    document.getElementById("ownership-alert-success").hidden = false;
+                } else
+                {
+                    document.getElementById("ownership-alert-failure").hidden = false;
+                }
+                // const response = await CONTRACT.getTokenDetails(token);
+                // console.log("Seller:",response[0]);
+                // console.log("Owner:",response[1]);
+                // console.log("Price:",response[2].toString());
+                // console.log("isSold:",response[3]);
+                // console.log("ExpireDuration:",response[4].toString());
+                // console.log("ExpiryTime:",response[5].toString());
+                // console.log("WarrantySecret:",response[6].toString());
+                // console.log("Timestamp:", response[7].toString())
             }
             catch(err) {
+                const alert = document.getElementById("ownership-alert-failure");
                 // console.log(err);
-                if(err.message.search("Warranty expired!!!")){
-                    console.log("token expired");
+                // console.log(err.data.message.includes("invalid token ID"))
+                if (err.data.message.includes("Warranty expired!!!"))
+                {
+                    alert.innerHTML = "Token Expired";
+                    console.log("token expired", token, "did see the token?");
+                    if (token)
+                    {
+                        console.log("Token deletion")
+                        result = await axios({
+                            method: "get",
+                            url: `http://${ip_addr}/api/token_burn?token_id=${token}`,
+                        })
+
+                        console.log(result)
+                    }
+
+                } else if (err.data.message.includes("Product unsold"))
+                {
+                    alert.innerHTML = "Product is still unsold";
+                    console.log("Product Unsold")
+                } else if (err.data.message.includes("invalid token ID"))
+                {
+                    alert.innerHTML = "Invalid Token";
+                    console.log(err)
+                } else if (err.data.message.includes("Only creator or owner"))
+                {
+                    alert.innerHTML = "Only creator or owner of the token can check Expiry time remaining"
                 }
+                else
+                {
+                    alert.innerHTML = "Contract Failure!!"
+                }
+
+
+
+                alert.hidden = false;
             }
             
         }
 
         document.querySelector("#token_check").addEventListener("click", async (event) => {
             event.preventDefault();
+            document.getElementById("expiry-alert-success").hidden = true;
+            document.getElementById("expiry-alert-failure").hidden = true;
             await checkExpiry()
         });
 
         document.querySelector("#checkOwnershipButton").addEventListener("click", async (event) => {
             event.preventDefault();
+            document.getElementById("ownership-alert-success").hidden = true;
+            document.getElementById("ownership-alert-failure").hidden = true;
             await checkOwnerhip()
         });        
     </script>

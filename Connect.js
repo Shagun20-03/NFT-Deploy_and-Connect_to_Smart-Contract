@@ -1,15 +1,14 @@
 const connect = async () => {
-	// if (window.ethereum) {
-	// 	await window.ethereum.send('eth_requestAccounts');
-	// 	window.web3 = new Web3(window.ethereum);
-	// }
 	if (typeof window.ethereum !== 'undefined') {
 		console.log('We are in!!');
-		var checks = await ethereum.request({
-			method: 'eth_requestAccounts',
-		});
-		console.log('checks-', checks[0]);
-		// window.accountTest = checks;
+		let checks = await window.ethereum.request({
+			method: "wallet_requestPermissions",
+			params: [
+			  {
+				eth_accounts: {}
+			  }
+			]
+		  });
 		return checks;
 	}
 	return undefined;
