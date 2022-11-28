@@ -68,10 +68,6 @@
                     <td id="product_desc_show"></td>
                 </tr>
                 <tr>
-                    <th scope="row">Warranty Secret Key: </th>
-                    <td id="warranty_secret_show"></td>
-                </tr>
-                <tr>
                     <th scope="row">Expiry Duration (In seconds): </th>
                     <td id="expiry_duration_show"></td>
                 </tr>
@@ -86,7 +82,13 @@
 
             </tbody>
         </table>
-        <button id="buy_product" class="btn btn-warning" disabled>Buy Now!!!</button>
+        <form class="float-left" id="token-form">
+            <div class="mb-3" style="display: inline-block;padding-right: 10px;">
+                <label for="buyer_secretkey" class="form-label">Secret Key</label>
+                <input type="number" class="form-control" name="buyer_secretkey" id="buyer_secretkey" value="0">
+            </div>
+            <button id="buy_product" class="btn btn-warning" disabled>Buy Now!!!</button>
+        </form>
         <form class="float-left" id="token-form">
             <div class="mb-3" style="display: inline-block;padding-right: 10px;">
                 <label for="buyer_address" class="form-label">Address</label>
@@ -109,215 +111,261 @@
         import deploy from './Deploy.js';
         import getContract from './ConnContract.js';
         import { ethers } from './ethers.main.js';
-        import { CONTRACT_ADDRESS, ip_addr } from "./config.js";
+                    import { CONTRACT_ADDRESS, ip_addr } from "./config.js";
 
-        async function conn() {
+                    async function conn()
+                    {
             const account = await connect();
         }
 
-        async function getCont() {
+                    async function getCont()
+                    {
             CONTRACT = undefined;
             CONTRACT = await getContract(CONTRACT_ADDRESS);
 
             let content = '';
-            if (CONTRACT) {
+                    if (CONTRACT)
+                    {
                 content = 'Contract received!!!!';
-            } else {
+                } else
+                {
                 content = 'Contract not available';
             }
             console.log(content);
-        }
+                }
         let TOKEN = 0;
         let secretKey = 0;
         let product_price = 0;
         //Custom functions
-        const getProduct = async () => {
+                    const getProduct = async () =>
+                    {
             var token1 = (document.querySelector("#token-id").value)
-            TOKEN = Number(token1);
-            try {
-
-                if (token1) {
-                    console.log(token1)
-                }
-                else {
-                    console.log(token1)
-                    return;
-                }
-                await conn();
-                await getCont();
-                const ipfs_uri = await CONTRACT.getTokenURI(
-                    Number(token1)
-                )
-                TOKEN = Number(token1);
-                console.log(ipfs_uri)
-                const response = await axios({
-                    method: "get",
-                    url: `http://${ip_addr}/ipfs/${ipfs_uri[0]}`,
-                })
-
-                if (response.status == 200) {
-                    console.log('Success:', response.data);
-                    let tds = document.querySelectorAll('td')
-                    tds[0].innerHTML = response.data.Product.product_id;
-                    tds[1].innerHTML = response.data.Product.product_name;
-                    tds[2].innerHTML = `<img src="http://${ip_addr}/ipfs/${response.data.Product.product_image_hash}"></img>`
-                    tds[3].innerHTML = response.data.Product.product_price;
-                    tds[4].innerHTML = response.data.Product.product_desc;
-                    tds[5].innerHTML = response.data.warranty.warranty_secretkey;
-                    tds[6].innerHTML = response.data.warranty.expiry_duration;
-                    tds[7].innerHTML = response.data.warranty.warranty_desc;
-                    tds[8].innerHTML = (ipfs_uri[1]) ? "Sold" : "Available";
-                    secretKey = Number(response.data.warranty.warranty_secretkey);
-                    product_price = Number(response.data.Product.product_price);
-                    document.getElementById("show_product").hidden = false;
-                    if (!ipfs_uri[1]) {
-                        document.getElementById("buy_product").disabled = false;
-                    } else {
-                        document.getElementById("transferOwnership").disabled = false;
-                    }
-                }
-            }
-            catch (err) {
-
-                if (err.data.message.includes("Warranty expired!!!")) {
-                    console.log("Token to delete:", TOKEN)
-                    if (TOKEN) {
-                        console.log("Token deletion started")
-                        const result = await axios({
-                            method: "get",
-                            url: `http://${ip_addr}/api/token_burn?token_id=${TOKEN}`,
-                        })
-                        console.log("Token deletion ended")
-                        console.log(result)
-                    }
-                    alert("Token Expired!!!")
-                    window.location.href = "/index.html";
-
-                } else if (err.data.message.includes("invalid token ID")) {
-                    alert("Invalid Token");
-                } else {
-                    alert("Contract Failure!!")
-                }
-
-            }
-
-        }
-
-        const buyProduct = async () => {
-            try {
-                await conn();
-                await getCont();
-                if (TOKEN == 0) {
-                    alert("Please get product!!!");
-                    return;
-                }
-                // console.log(TOKEN, secretKey, product_price)
-                const txnReceipt = await CONTRACT.buyProduct(
-                    TOKEN,
-                    secretKey,
+                    TOKEN = Number(token1);
+                    try
                     {
-                        value: ethers.utils.parseUnits(product_price.toString(), 'ether')
-                    }
-                )
 
-                const receipt = await txnReceipt.wait()
-
-                document.getElementById("buy_product").disabled = true;
-
-                document.getElementById("warranty_status").innerHTML = "Sold"
-
-                alert("You are now the owner of this product!!!")
-            } catch (err) {
-                if (err.data.message.includes("Warranty expired!!!")) {
-                    if (TOKEN) {
-                        console.log("Token deletion started")
-                        result = await axios({
-                            method: "get",
-                            url: `http://${ip_addr}/api/token_burn?token_id=${TOKEN}`,
-                        })
-                        console.log("Token deletion ended")
-                        console.log(result)
-                    }
-                    alert("Token Expired!!!")
-                } else if (err.data.message.includes("invalid token ID")) {
-                    alert("Invalid Token");
-                } else if (err.data.message.includes("Product already sold!!!!")) {
-                    alert("Product already sold!!!")
-                }
-                else {
-                    alert("Contract Failure!!")
-                }
-            }
-
-        }
-
-        const transferOwnership = async () => {
-            try {
-                await conn();
-                await getCont();
-                if (TOKEN == 0) {
-                    alert("Please get product!!!");
-                    return;
-                }
-                // console.log(TOKEN, secretKey, product_price)
-                const address = document.querySelector("#buyer_address").value;
-                if (address && address.length == 0) {
-                    alert("Please enter proper address");
-                    return;
-                }
-                const txnReceipt = await CONTRACT.transferOwnershipOfProduct(
-                    address,
-                    TOKEN,
+                    if (token1)
                     {
-                        value: ethers.utils.parseUnits(product_price.toString(), 'ether')
+                        console.log(token1)
                     }
-                )
-
-                const receipt = await txnReceipt.wait()
-
-                alert("Ownership of this token changed!!!")
-            } catch (err) {
-                console.log(err);
-                if (err.data.message.includes("Warranty expired!!!")) {
-                    if (TOKEN) {
-                        console.log("Token deletion started")
-                        const result = await axios({
-                            method: "get",
-                            url: `http://${ip_addr}/api/token_burn?token_id=${TOKEN}`,
-                        })
-                        console.log("Token deletion ended")
-                        console.log(result)
+                    else
+                    {
+                        console.log(token1)
+                        return;
                     }
-                    alert("Token Expired!!!")
-                } else if (err.data.message.includes("invalid token ID")) {
-                    alert("Invalid Token");
-                } else if (err.data.message.includes("Product already sold!!!!")) {
-                    alert("Product already sold!!!")
+                    await conn();
+                    await getCont();
+                    const ipfs_uri = await CONTRACT.getTokenURI(
+                        Number(token1)
+                    )
+                    TOKEN = Number(token1);
+                    console.log(ipfs_uri)
+                    const response = await axios({
+                        method: "get",
+                        url: `http://${ip_addr}/ipfs/${ipfs_uri[0]}`,
+                    })
+
+                    if (response.status == 200)
+                    {
+                        console.log('Success:', response.data);
+                        let tds = document.querySelectorAll('td')
+                        tds[0].innerHTML = response.data.Product.product_id;
+                        tds[1].innerHTML = response.data.Product.product_name;
+                        tds[2].innerHTML = `<img src="http://${ip_addr}/ipfs/${response.data.Product.product_image_hash}"></img>`
+                        tds[3].innerHTML = response.data.Product.product_price;
+                        tds[4].innerHTML = response.data.Product.product_desc;
+                        tds[5].innerHTML = response.data.warranty.expiry_duration;
+                        tds[6].innerHTML = response.data.warranty.warranty_desc;
+                        tds[7].innerHTML = (ipfs_uri[1]) ? "Sold" : "Available";
+                        secretKey = Number(response.data.warranty.warranty_secretkey);
+                        product_price = Number(response.data.Product.product_price);
+                        document.getElementById("show_product").hidden = false;
+                        if (!ipfs_uri[1])
+                        {
+                            document.getElementById("buy_product").disabled = false;
+                        } else
+                        {
+                            document.getElementById("transferOwnership").disabled = false;
+                        }
+                    }
                 }
-                else {
+                catch (err)
+                {
+
+                    if (err.data.message.includes("Warranty expired!!!"))
+                    {
+                        console.log("Token to delete:", TOKEN)
+                        if (TOKEN)
+                        {
+                            console.log("Token deletion started")
+                            const result = await axios({
+                                method: "get",
+                                url: `http://${ip_addr}/api/token_burn?token_id=${TOKEN}`,
+                            })
+                            console.log("Token deletion ended")
+                            console.log(result)
+                        }
+                        alert("Token Expired!!!")
+                        window.location.href = "/index.html";
+
+                } else if (err.data.message.includes("invalid token ID"))
+                {
+                    alert("Invalid Token");
+                } else
+                {
                     alert("Contract Failure!!")
                 }
-            }
-        }
+
+                }
+
+                }
+
+                    const buyProduct = async () =>
+                    {
+                        try
+                        {
+                            await conn();
+                            await getCont();
+                            if (TOKEN == 0)
+                            {
+                                alert("Please get product!!!");
+                                return;
+                            }
+                        secretKey = Number(document.querySelector("#buyer_secretkey").value);
+                        if (secretKey <= 0)
+                        {
+                            alert("Secret is cannot be negative!!!")
+                            return
+                        }
+                        // console.log(TOKEN, secretKey, product_price)
+                        const txnReceipt = await CONTRACT.buyProduct(
+                            TOKEN,
+                            secretKey,
+                            {
+                                value: ethers.utils.parseUnits(product_price.toString(), 'ether')
+                            }
+                        )
+
+                        const receipt = await txnReceipt.wait()
+
+                        document.getElementById("buy_product").disabled = true;
+
+                        document.getElementById("warranty_status").innerHTML = "Sold"
+
+                        alert("You are now the owner of this product!!!")
+                    } catch (err)
+                    {
+                        if (err.data.message.includes("Warranty expired!!!"))
+                        {
+                            if (TOKEN)
+                            {
+                                console.log("Token deletion started")
+                                result = await axios({
+                                    method: "get",
+                                    url: `http://${ip_addr}/api/token_burn?token_id=${TOKEN}`,
+                                })
+                                console.log("Token deletion ended")
+                                console.log(result)
+                            }
+                            alert("Token Expired!!!")
+                        } else if (err.data.message.includes("invalid token ID"))
+                        {
+                            alert("Invalid Token");
+                        } else if (err.data.message.includes("Product already sold!!!!"))
+                        {
+                            alert("Product already sold!!!")
+                    } else if (err.data.message.includes("You are not authorized to by this product"))
+                    {
+                        alert("You are not authorized to by this product");
+                        }
+                        else
+                        {
+                            alert("Contract Failure!!")
+                        }
+                    }
+
+                }
+
+                    const transferOwnership = async () =>
+                    {
+                        try
+                        {
+                            await conn();
+                            await getCont();
+                            if (TOKEN == 0)
+                            {
+                                alert("Please get product!!!");
+                                return;
+                            }
+                            // console.log(TOKEN, secretKey, product_price)
+                            const address = document.querySelector("#buyer_address").value;
+                            if (address && address.length == 0)
+                            {
+                                alert("Please enter proper address");
+                                return;
+                            }
+                            const txnReceipt = await CONTRACT.transferOwnershipOfProduct(
+                                address,
+                                TOKEN,
+                                {
+                                    value: ethers.utils.parseUnits(product_price.toString(), 'ether')
+                                }
+                            )
+
+                        const receipt = await txnReceipt.wait()
+
+                        alert("Ownership of this token changed!!!")
+                    } catch (err)
+                    {
+                        console.log(err);
+                        if (err.data.message.includes("Warranty expired!!!"))
+                        {
+                            if (TOKEN)
+                            {
+                                console.log("Token deletion started")
+                                const result = await axios({
+                                    method: "get",
+                                    url: `http://${ip_addr}/api/token_burn?token_id=${TOKEN}`,
+                                })
+                                console.log("Token deletion ended")
+                                console.log(result)
+                            }
+                            alert("Token Expired!!!")
+                        } else if (err.data.message.includes("invalid token ID"))
+                        {
+                            alert("Invalid Token");
+                        } else if (err.data.message.includes("Product already sold!!!!"))
+                        {
+                            alert("Product already sold!!!")
+                        }
+                        else
+                        {
+                            alert("Contract Failure!!")
+                        }
+                    }
+                }
 
 
 
-        document.querySelector('#submit-token').addEventListener('click', async function (event) {
+                    document.querySelector('#submit-token').addEventListener('click', async function (event)
+                    {
             event.preventDefault()
-            document.getElementById("buy_product").disabled = true;
-            document.getElementById("show_product").hidden = true;
+                    document.getElementById("buy_product").disabled = true;
+                    document.getElementById("show_product").hidden = true;
             await getProduct();
         });
 
-        document.querySelector("#buy_product").addEventListener('click', async function (event) {
-            event.preventDefault();
-            document.getElementById("buy_product").disabled = true;
-            await buyProduct();
-        });
+                    document.querySelector("#buy_product").addEventListener('click', async function (event)
+                    {
+                        event.preventDefault();
+                        document.getElementById("buy_product").disabled = true;
+                        await buyProduct();
+                    });
 
-        document.querySelector("#transferOwnership").addEventListener('click', async function (event) {
-            event.preventDefault();
-            await transferOwnership();
+                    document.querySelector("#transferOwnership").addEventListener('click', async function (event)
+                    {
+                        event.preventDefault();
+                        await transferOwnership();
         });
 
     </script>
