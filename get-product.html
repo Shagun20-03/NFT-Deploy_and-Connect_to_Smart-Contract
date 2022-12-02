@@ -204,31 +204,27 @@
 
         }
 
-                    const buyProduct = async () =>
+        const buyProduct = async () => {
+            try {
+                await conn();
+                await getCont();
+                if (TOKEN == 0) {
+                    alert("Please get product!!!");
+                    return;
+                }
+                secretKey = Number(document.querySelector("#buyer_secretkey").value);
+                if (secretKey < 0) {
+                    alert("Secret is cannot be negative!!!")
+                    return
+                }
+                // console.log(TOKEN, secretKey, product_price)
+                const txnReceipt = await CONTRACT.buyProduct(
+                    TOKEN,
+                    secretKey,
                     {
-                        try
-                        {
-                            await conn();
-                            await getCont();
-                            if (TOKEN == 0)
-                            {
-                                alert("Please get product!!!");
-                                return;
-                            }
-                        secretKey = Number(document.querySelector("#buyer_secretkey").value);
-                        if (secretKey < 0)
-                        {
-                            alert("Secret is cannot be negative!!!")
-                            return
-                        }
-                        // console.log(TOKEN, secretKey, product_price)
-                        const txnReceipt = await CONTRACT.buyProduct(
-                            TOKEN,
-                            secretKey,
-                            {
-                                value: ethers.utils.parseUnits(product_price.toString(), 'ether')
-                            }
-                        )
+                        value: ethers.utils.parseUnits(product_price.toString(), 'ether')
+                    }
+                )
 
                 const receipt = await txnReceipt.wait()
 

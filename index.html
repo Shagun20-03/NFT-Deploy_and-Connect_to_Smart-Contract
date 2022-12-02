@@ -188,15 +188,6 @@
                 await getCont();
 
                 const response = await CONTRACT.ownerShipProof(token);
-                const details = await CONTRACT.getTokenDetails(token);
-                console.log("seller:", details[0])
-                console.log("owner:", details[1])
-                console.log("price:", ethers.utils.formatEther(details[2].toString()))
-                console.log("isSold:", details[3])
-                console.log("Expiry D:", details[4].toString())
-                console.log("Expiry T:", details[5].toString())
-                console.log("Secret Key:", details[6].toString())
-                console.log("Timestamp:", details[7].toString())
                 // console.log(typeof response);
                 if (response) {
                     document.getElementById("ownership-alert-success").hidden = false;
